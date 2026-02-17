@@ -15,7 +15,7 @@ import zlib
 
 # 导入原版 readmdict 中的类
 try:
-    from ..readmdict import MDX, MDD
+    from dict_vocab.readmdict import MDX, MDD
 except ImportError:
     # 如果不是作为包运行，直接导入
     from dict_vocab.readmdict import MDX, MDD
