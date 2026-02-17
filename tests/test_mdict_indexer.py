@@ -22,7 +22,7 @@ import pytest
 # [tool.pytest.ini_options]
 # pythonpath = ["src"]
 # 然后这样导入：
-from dict_vocab.mdict_indexer import ExtendedMDX, ExtendedMDD, IndexBuilder
+from dict_vocab.indexer.mdict_indexer import ExtendedMDX, ExtendedMDD, IndexBuilder
 
 
 # ----------------------------------------------------------------------
@@ -275,7 +275,7 @@ def test_index_builder_build_mdx_index(tmp_path, fake_mdx_file, mocker):
     }
 
     # 使用 patch 替换 ExtendedMDX
-    mocker.patch("dict_vocab.mdict_indexer.ExtendedMDX", return_value=MockExtMDX)
+    mocker.patch("dict_vocab.indexer.mdict_indexer.ExtendedMDX", return_value=MockExtMDX)
 
     # 强制重建索引
     builder = IndexBuilder(
@@ -511,8 +511,8 @@ def test_index_builder_with_mdd(tmp_path, fake_mdx_file, fake_mdd_file, mocker):
         },
     }
 
-    mocker.patch("dict_vocab.mdict_indexer.ExtendedMDX", return_value=MockExtMDX)
-    mocker.patch("dict_vocab.mdict_indexer.ExtendedMDD", return_value=MockExtMDD)
+    mocker.patch("dict_vocab.indexer.mdict_indexer.ExtendedMDX", return_value=MockExtMDX)
+    mocker.patch("dict_vocab.indexer.mdict_indexer.ExtendedMDD", return_value=MockExtMDD)
 
     builder = IndexBuilder(
         fname=str(fake_mdx_file),
