@@ -348,6 +348,9 @@ class IndexBuilder(object):
 
     def _build_mdd_index(self):
         """构建 MDD 索引数据库。"""
+        if os.path.exists(self._mdd_db):
+            os.remove(self._mdd_db)
+        
         print("正在构建 MDD 索引: %s" % self._mdd_db)
         mdd = ExtendedMDD(self._mdd_file, passcode=self._passcode)
         self._mdd_obj = mdd
