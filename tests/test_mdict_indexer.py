@@ -99,6 +99,8 @@ def test_extended_mdx_get_index_basic(mocker):
     MockMDX._version = 3.0
     MockMDX._encoding = "UTF-8"
     MockMDX._stylesheet = {"1": ("<b>", "</b>")}
+    MockMDX._number_format = ">Q"
+    MockMDX._number_width = 8
     MockMDX.header = {
         b"Title": "TestDict".encode("utf-8"),
         b"Description": "A test dictionary".encode("utf-8"),
@@ -123,16 +125,13 @@ def test_extended_mdx_get_index_basic(mocker):
     # 模拟文件对象
     fake_file = mocker.MagicMock(name="file")
     fake_file.tell.return_value = 123  # file_pos
-    fake_file.read.side_effect = [
-        # num_record_blocks
-        struct.pack(">I", 1),
-        # total_size
-        struct.pack(">Q", 0),
-        # compressed_size, decompressed_size
-        struct.pack(">II", 10, 20),
-        # block data (10 字节，含类型)
-        b"\x00\x00\x00\x00data\x00data",
-    ]
+    all_data = struct.pack(">I", 1) + struct.pack(">Q", 0) + struct.pack(">II", 10, 20) + b"\x00\x00\x00\x00data\x00data"
+    offset = [0]
+    def fake_read(n):
+        result = all_data[offset[0]:offset[0]+n]
+        offset[0] += n
+        return result
+    fake_file.read.side_effect = fake_read
     mock_open = mocker.patch("builtins.open", return_value=fake_file)
 
     # 构造 ExtendedMDX 实例
@@ -176,6 +175,8 @@ def test_extended_mdd_get_index_basic(mocker):
     MockMDD = mocker.MagicMock(name="MDD")
     MockMDD._version = 3.0
     MockMDD._encoding = "UTF-8"
+    MockMDD._number_format = ">Q"
+    MockMDD._number_width = 8
     MockMDD.header = {
         b"Title": "TestRes".encode("utf-8"),
         b"Description": "Test resources".encode("utf-8"),
@@ -191,12 +192,13 @@ def test_extended_mdd_get_index_basic(mocker):
 
     fake_file = mocker.MagicMock(name="file")
     fake_file.tell.return_value = 456
-    fake_file.read.side_effect = [
-        struct.pack(">I", 1),
-        struct.pack(">Q", 0),
-        struct.pack(">II", 10, 20),
-        b"\x00\x00\x00\x00data\x00data",
-    ]
+    all_data = struct.pack(">I", 1) + struct.pack(">Q", 0) + struct.pack(">II", 10, 20) + b"\x00\x00\x00\x00data\x00data"
+    offset = [0]
+    def fake_read(n):
+        result = all_data[offset[0]:offset[0]+n]
+        offset[0] += n
+        return result
+    fake_file.read.side_effect = fake_read
     mocker.patch("builtins.open", return_value=fake_file)
 
     ext = ExtendedMDD.__new__(ExtendedMDD)
