@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>词典查询</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 40px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1em;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group button {
+            padding: 15px 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .input-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-group button:active {
+            transform: translateY(0);
+        }
+
+        .input-group button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .options {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .options input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+
+        .results {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            min-height: 200px;
+        }
+
+        .results-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            color: #333;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .word-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #c33;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .no-results-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .definition-item {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .definition-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .definition-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-size: 0.85em;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        /* Dictionary content container - let original CSS handle styles */
+        .definition-content {
+            /* Container only - original CSS from dictionary will style the content */
+        }
+
+        .definition-content img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .dict-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .search-box, .results {
+                padding: 20px;
+            }
+
+            .input-group input, .input-group button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 词典查询</h1>
+            <p>输入单词，获取详细释义</p>
+        </div>
+
+        <div class="search-box">
+            <div class="input-group">
+                <input type="text" id="wordInput" placeholder="请输入要查询的单词..." autocomplete="off">
+                <button id="searchBtn" onclick="lookup()">查询</button>
+            </div>
+            <div class="options">
+                <label>
+                    <input type="checkbox" id="ignoreCase">
+                    忽略大小写
+                </label>
+            </div>
+        </div>
+
+        <div class="results" id="resultsBox">
+            <div class="results-header">
+                <h2>查询结果</h2>
+            </div>
+            <div id="resultsContent">
+                <div class="no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <p>输入单词并点击查询按钮开始查词</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wordInput = document.getElementById('wordInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContent = document.getElementById('resultsContent');
+        const ignoreCaseCheckbox = document.getElementById('ignoreCase');
+
+        wordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                lookup();
+            }
+        });
+
+        async function lookup() {
+            const word = wordInput.value.trim();
+            
+            if (!word) {
+                showError('请输入要查询的单词');
+                return;
+            }
+
+            searchBtn.disabled = true;
+            searchBtn.textContent = '查询中...';
+            
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>正在查询...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/lookup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        word: word,
+                        ignorecase: ignoreCaseCheckbox.checked
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || '查询失败');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError(error.message || '网络错误，请稍后重试');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = '查询';
+            }
+        }
+
+        // Configuration for dictionary resources
+        const DICT_CSS_PATH = '/resource/cobuild2024/cobuild2024.css';
+
+        function processResourcePaths(html) {
+            // Replace relative CSS references with full path including subdirectory
+            html = html.replace(/href="cobuild2024\.css"/g, 'href="/resource/cobuild2024/cobuild2024.css"');
+            html = html.replace(/href="cb24mdd\.css"/g, 'href="/resource/cobuild2024/cb24mdd.css"');
+            
+            // Replace sound:// protocol with resource path (sounds are in subdirectory)
+            html = html.replace(/href="sound:\/\//g, 'href="/resource/cobuild2024/');
+            html = html.replace(/data-src-mp3="sound:\/\//g, 'data-src-mp3="/resource/cobuild2024/');
+            
+            // Replace relative image paths (images are in subdirectory)
+            html = html.replace(/src="([^"]*\.(?:png|jpg|jpeg|gif|bmp|webp))"/gi, 'src="/resource/cobuild2024/$1"');
+            
+            return html;
+        }
+
+        function injectCss() {
+            // Remove existing dictionary CSS if present
+            const existing = document.getElementById('dict-css');
+            if (existing) existing.remove();
+            
+            // Add dictionary CSS
+            const link = document.createElement('link');
+            link.id = 'dict-css';
+            link.rel = 'stylesheet';
+            link.href = DICT_CSS_PATH;
+            document.head.appendChild(link);
+        }
+
+        function displayResults(data) {
+            let html = '';
+
+            if (data.dict_title) {
+                html += `
+                    <div class="dict-info">
+                        <strong>词典：</strong>${escapeHtml(data.dict_title)}
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="results-header">
+                    <h2>
+                        <span class="word-tag">${escapeHtml(data.word)}</span>
+                        的释义
+                    </h2>
+                </div>
+            `;
+
+            if (data.definitions && data.definitions.length > 0) {
+                data.definitions.forEach((def, index) => {
+                    // Process resource paths in definition HTML
+                    const processedDef = processResourcePaths(def);
+                    
+                    html += `
+                        <div class="definition-item">
+                            <span class="definition-number">${index + 1}</span>
+                            <div class="definition-content">
+                                ${processedDef}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `
+                    <div class="no-results">
+                        <div class="no-results-icon">📖</div>
+                        <p>未找到该单词的释义</p>
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = html;
+            
+            // Inject dictionary CSS
+            injectCss();
+            
+            // Setup audio click handlers
+            setupAudioHandlers();
+        }
+
+        function setupAudioHandlers() {
+            // Handle audio click events
+            document.querySelectorAll('.definition-content [data-src-mp3], .definition-content .hwd_sound').forEach(elem => {
+                elem.style.cursor = 'pointer';
+                elem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const src = this.getAttribute('data-src-mp3');
+                    if (src) {
+                        const audio = new Audio(src);
+                        audio.play().catch(err => console.log('Audio play failed:', err));
+                    }
+                });
+            });
+        }
+
+        function showError(message) {
+            resultsContent.innerHTML = `
+                <div class="error">
+                    <strong>错误：</strong>${escapeHtml(message)}
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

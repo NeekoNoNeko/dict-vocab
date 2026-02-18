@@ -172,3 +172,50 @@ class TestGetDictBuilder:
             with pytest.raises(HTTPException) as exc_info:
                 get_dict_builder("/nonexistent/dict.mdx")
             assert exc_info.value.status_code == 404
+
+
+class TestStaticFiles:
+    """Test static file serving (web UI)."""
+
+    def test_index_html_served(self, client):
+        """Test root path serves index.html."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "词典查词" in response.text or "<html" in response.text.lower()
+
+    def test_static_files_not_found(self, client):
+        """Test non-existent static files return 404."""
+        response = client.get("/nonexistent-file.css")
+        assert response.status_code == 404
+
+
+class TestResourceFiles:
+    """Test resource file serving (CSS, images, audio, etc.)."""
+
+    def test_resource_css_file_served(self, client):
+        """Test CSS file in resource directory is served correctly."""
+        # Test serving CSS file from fallback resource directory
+        response = client.get("/resource/cobuild2024/cobuild2024.css")
+        assert response.status_code == 200
+        assert "text/css" in response.headers.get("content-type", "")
+
+    def test_resource_path_traversal_blocked(self, client):
+        """Test path traversal attempts are blocked."""
+        response = client.get("/resource/../../../etc/passwd")
+        # Should be blocked (403) or not found (404) - both are acceptable security responses
+        assert response.status_code in [403, 404]
+        if response.status_code == 403:
+            assert "Access denied" in response.json()["detail"]
+
+    def test_resource_not_found(self, client):
+        """Test non-existent resource returns 404."""
+        response = client.get("/resource/nonexistent/file.css")
+        assert response.status_code == 404
+
+    def test_resource_directory_not_configured(self, client):
+        """Test resource serving when no resource directory exists."""
+        with patch("pathlib.Path.exists", return_value=False):
+            response = client.get("/resource/test.css")
+            # Should return 404 when no dictionary configured and no fallback
+            assert response.status_code in [404, 403]
